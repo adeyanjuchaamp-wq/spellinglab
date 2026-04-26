@@ -43,34 +43,42 @@ function populateClassSelect() {
 }
 
 function startPractice() {
+  const selected = document.getElementById('classSelect').value;
   const range = document.getElementById('rangeSelect').value;
-let allWords = wordLists[selected] || [];
 
-if (range === 'all') {
-  currentWords = [...allWords];
-} else {
-  let [start, end] = range.split('-').map(Number);
+  let allWords = wordLists[selected] || [];
 
-  // Convert to zero-based index
-  start = start - 1;
-  end = end - 1;
+  if (range === 'all') {
+    currentWords = [...allWords];
+  } else {
+    let [start, end] = range.split('-').map(Number);
 
-  // Prevent overflow
-  start = Math.max(0, start);
-  end = Math.min(allWords.length - 1, end);
+    // Convert to zero-based index
+    start = start - 1;
+    end = end - 1;
 
-  currentWords = allWords.slice(start, end + 1);
-}
-  if (currentWords.length === 0) {
-  document.getElementById('wordList').innerHTML =
-    "<p style='text-align:center;'>⚠️ No words available for this range.</p>";
-  return;
-}
+    // Prevent overflow
+    start = Math.max(0, start);
+    end = Math.min(allWords.length - 1, end);
+
+    currentWords = allWords.slice(start, end + 1);
   }
 
+  // Handle empty result
+  if (currentWords.length === 0) {
+    document.getElementById('wordList').innerHTML =
+      "<p style='text-align:center;'>⚠️ No words available for this range.</p>";
+
+    document.getElementById('home').style.display = 'none';
+    document.getElementById('practice').style.display = 'block';
+    return;
+  }
+
+  // Switch screen
   document.getElementById('home').style.display = 'none';
   document.getElementById('practice').style.display = 'block';
 
+  // Display words
   let html = '';
   currentWords.forEach(word => {
     html += `
@@ -81,7 +89,8 @@ if (range === 'all') {
     `;
   });
 
-  document.getElementById('wordList').innerHTML = `<ul class="word-list">${html}</ul>`;
+  document.getElementById('wordList').innerHTML =
+    `<ul class="word-list">${html}</ul>`;
 }
 
 function startTest() {
