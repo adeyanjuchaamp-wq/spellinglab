@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadWords() {
-  return fetch('/api/words')
+  return fetch('words.json')
     .then(response => response.json())
     .then(data => {
       wordLists = data;
