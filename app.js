@@ -43,24 +43,29 @@ function populateClassSelect() {
 }
 
 function startPractice() {
-  const selected = document.getElementById('classSelect').value;
   const range = document.getElementById('rangeSelect').value;
-  let allWords = wordLists[selected] || [];
+let allWords = wordLists[selected] || [];
 
-  if (range === 'all') {
-    currentWords = [...allWords];
-  } else {
-    let [start, end] = range.split('-').map(Number);
+if (range === 'all') {
+  currentWords = [...allWords];
+} else {
+  let [start, end] = range.split('-').map(Number);
 
-// Convert to zero-based index
-start = start - 1;
-end = end - 1;
+  // Convert to zero-based index
+  start = start - 1;
+  end = end - 1;
 
-// Prevent errors
-start = Math.max(0, start);
-end = Math.min(allWords.length - 1, end);
+  // Prevent overflow
+  start = Math.max(0, start);
+  end = Math.min(allWords.length - 1, end);
 
-currentWords = allWords.slice(start, end + 1);
+  currentWords = allWords.slice(start, end + 1);
+}
+  if (currentWords.length === 0) {
+  document.getElementById('wordList').innerHTML =
+    "<p style='text-align:center;'>⚠️ No words available for this range.</p>";
+  return;
+}
   }
 
   document.getElementById('home').style.display = 'none';
