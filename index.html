@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mr. Ben's Spelling Lab</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Home Screen -->
+<div class="card" id="home">
+  <div class="logo">📘 Mr. Ben's Spelling Lab</div>
+    <p>Select Class</p>
+  <select id="classSelect">
+  </select>
+  <p>Select Word Range</p>
+  <select id="rangeSelect">
+    <option value="all">All Words</option>
+    <option value="1-10">1-10</option>
+    <option value="11-20">11-20</option>
+    <option value="21-30">21-30</option>
+    <option value="31-40">31-40</option>
+    <option value="41-50">41-50</option>
+  </select>
+  <div class="button-group">
+    <button onclick="startPractice()">📖 Practice</button>
+    <button onclick="startTest()">✏️ Test</button>
+    <button onclick="openAdmin()">⚙️ Admin</button>
+  </div>
+</div>
+
+<!-- Practice Screen -->
+<div class="card hidden" id="practice">
+  <h2>Practice Mode</h2>
+  <div id="wordList"></div>
+  <div class="button-group">
+    <button onclick="goHome()">⬅ Back</button>
+  </div>
+</div>
+
+<!-- Test Screen -->
+<div class="card hidden" id="test">
+  <h2>Test Mode</h2>
+  <div id="wordDisplay">Click Speak</div>
+  <button onclick="speakWord()" style="display: block; margin: 20px auto;">🔊 Speak</button>
+  <input type="text" id="answer" placeholder="Type spelling here">
+  <button onclick="submitAnswer()">Submit</button>
+  <p id="result"></p>
+  <p id="score"></p>
+  <div class="button-group">
+    <button onclick="nextWord()">Next</button>
+    <button onclick="goHome()">End Test</button>
+  </div>
+</div>
+
+<!-- Admin Screen -->
+<div class="card hidden" id="admin">
+  <h2>Admin Dashboard</h2>
+  <p>Manage spelling word lists</p>
+
+  <div id="adminLogin">
+    <input type="text" id="adminUsername" placeholder="Admin username">
+    <input type="password" id="adminPassword" placeholder="Password">
+    <button onclick="loginAdmin()">🔐 Login</button>
+    <p id="adminLoginError" style="color:#f44336; text-align:center; margin-top: 10px;"></p>
+  </div>
+
+  <div id="adminDashboard" class="hidden">
+    <label for="classSelectAdmin">Select Class</label>
+    <select id="classSelectAdmin" onchange="loadAdminClass()"></select>
+    <textarea id="wordsEditor" rows="6" placeholder="Enter words separated by commas"></textarea>
+
+    <div style="margin-top: 15px;">
+      <input type="text" id="newClassName" placeholder="New class name (e.g. year5)">
+      <button onclick="addAdminClass()" style="margin-top: 10px;">➕ Add Class</button>
+    </div>
+
+    <div class="button-group">
+      <button onclick="saveWords()" style="background: #4caf50;">💾 Save Words</button>
+      <button onclick="logoutAdmin()">🔒 Logout</button>
+      <button onclick="goHome()">⬅ Back</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

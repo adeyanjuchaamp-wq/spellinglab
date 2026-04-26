@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spelling Lab - Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">⚙️ Admin Dashboard</div>
+  <h1> Mr. Ben's Spelling Lab</h1>
+  <p>Manage Word Lists</p>
+
+  <div id="adminLogin">
+    <input type="text" id="adminUsername" placeholder="Admin username">
+    <input type="password" id="adminPassword" placeholder="Password">
+    <button onclick="loginAdmin()">🔐 Login</button>
+    <p id="adminLoginError" style="color:#f44336; text-align:center; margin-top: 10px;"></p>
+  </div>
+
+  <div id="adminDashboard" class="hidden">
+    <label for="classSelectAdmin">Select Class</label>
+    <select id="classSelectAdmin" onchange="loadAdminClass()"></select>
+    <textarea id="wordsEditor" rows="6" placeholder="Enter words separated by commas"></textarea>
+
+    <div style="margin-top: 15px;">
+      <input type="text" id="newClassName" placeholder="New class name (e.g. year5)">
+      <button onclick="addAdminClass()" style="margin-top: 10px;">➕ Add Class</button>
+    </div>
+
+    <div style="margin-top: 15px;">
+      <label for="manageClassSelect">Manage Class</label>
+      <select id="manageClassSelect"></select>
+      <input type="text" id="renameClassName" placeholder="New class name">
+      <button onclick="renameClass()">Rename</button>
+      <button onclick="deleteClass()" style="background: #f44336;">Delete</button>
+    </div>
+
+    <div class="button-group">
+      <button onclick="saveWords()" style="background: #4caf50; margin-top: 20px;">💾 Save Changes</button>
+      <button onclick="logoutAdmin()" style="margin-top: 20px;">🔒 Logout</button>
+      <a href="index.html" style="display: inline-block; margin-top: 20px;">
+        <button>⬅ Back to App</button>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    loadWords().then(() => {
+      resetAdminLogin();
+    });
+  });
+</script>
+
+</body>
+</html>
