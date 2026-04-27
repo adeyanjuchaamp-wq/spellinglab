@@ -45,7 +45,7 @@
     <p id="practiceSubtitle">Review and listen to words.</p>
     <div id="wordList"></div>
     <div class="button-group">
-      <button class="secondary" onclick="goHome()">⬅ Back Home</button>
+      <button class="secondary" onclick="goHome()">Back Home</button>
     </div>
   </div>
 
@@ -95,11 +95,13 @@
     <div id="adminLogin">
       <input type="text" id="adminUsername" placeholder="Admin username">
       <input type="password" id="adminPassword" placeholder="Password">
-      <button onclick="loginAdmin()">Login</button>
+        <div class="button-group">
+          <button onclick="loginAdmin()">Login</button>
+          <button class="secondary" onclick="goHome()">⬅ Back Home</button>
+        </div>
       <p id="adminLoginError" class="error-text"></p>
-      <button class="secondary" onclick="goHome()">⬅ Back Home</button>
     </div>
- 
+
     <div id="adminDashboard" class="hidden">
       <label for="classSelectAdmin">Select Class</label>
       <select id="classSelectAdmin" onchange="loadAdminClass()"></select>
