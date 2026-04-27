@@ -10,7 +10,7 @@
 
   <!-- Home Screen -->
   <div class="card screen" id="home">
-    <div class="logo">📘 Mr. Ben's Spelling Lab</div>
+    <div class="logo">Mr. Ben's Spelling Lab</div>
     <p class="subtitle">Adaptive spelling practice and test mode</p>
 
     <label for="studentName">Student Name</label>
@@ -33,9 +33,9 @@
     </div>
 
     <div class="button-group">
-      <button onclick="startPractice()">📖 Practice Class Words</button>
-      <button onclick="startTest()">✏️ Start Test</button>
-      <button class="secondary" onclick="openAdmin()">⚙️ Admin</button>
+      <button onclick="startPractice()">Practice Class Words</button>
+      <button onclick="startTest()">Start Test</button>
+      <button class="secondary" onclick="openAdmin()">Admin</button>
     </div>
   </div>
 
@@ -54,7 +54,7 @@
     <h2>Test Mode</h2>
     <div class="progress-badge" id="testProgress">Word 1 of 10</div>
     <div id="wordDisplay">Tap speak to hear the word</div>
-    <button onclick="speakWord()" class="speak-button">🔊 Speak Word</button>
+    <button onclick="speakWord()" class="speak-button">Speak Word</button>
     <input type="text" id="answer" placeholder="Type spelling here" autocomplete="off">
     <p id="testMessage" class="message-area"></p>
     <div class="button-group">
@@ -71,19 +71,19 @@
 
     <div class="results-grid">
       <div class="result-column">
-        <h3>✅ Correct Words</h3>
+        <h3>Correct Words</h3>
         <div class="chip-list" id="correctWordsList"></div>
       </div>
       <div class="result-column">
-        <h3>❌ Missed Words</h3>
+        <h3>Missed Words</h3>
         <div class="chip-list" id="missedWordsList"></div>
       </div>
     </div>
 
     <div class="button-group">
-      <button onclick="retrySameTest()">🔁 Retry Same Test</button>
-      <button onclick="practiceMissedWords()">📚 Practice Missed Words</button>
-      <button class="secondary" onclick="goHome()">🏠 Back Home</button>
+      <button onclick="retrySameTest()">Retry Same Test</button>
+      <button onclick="practiceMissedWords()">Practice Missed Words</button>
+      <button class="secondary" onclick="goHome()">Back Home</button>
     </div>
   </div>
 
@@ -95,7 +95,7 @@
     <div id="adminLogin">
       <input type="text" id="adminUsername" placeholder="Admin username">
       <input type="password" id="adminPassword" placeholder="Password">
-      <button onclick="loginAdmin()">🔐 Login</button>
+      <button onclick="loginAdmin()">Login</button>
       <p id="adminLoginError" class="error-text"></p>
     </div>
 
@@ -106,13 +106,13 @@
 
       <div class="admin-stack">
         <input type="text" id="newClassName" placeholder="New class name (e.g. Year 6)">
-        <button onclick="addAdminClass()">➕ Add Class</button>
+        <button onclick="addAdminClass()">Add Class</button>
       </div>
 
       <div class="button-group">
-        <button onclick="saveWords()" style="background: #4caf50;">💾 Save Words</button>
-        <button class="secondary" onclick="logoutAdmin()">🔒 Logout</button>
-        <button class="secondary" onclick="goHome()">⬅ Back</button>
+        <button onclick="saveWords()" style="background: #4caf50;">Save Words</button>
+        <button class="secondary" onclick="logoutAdmin()">Logout</button>
+        <button class="secondary" onclick="goHome()">Back</button>
       </div>
     </div>
   </div>
