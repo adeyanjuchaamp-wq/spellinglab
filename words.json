@@ -1,22 +1,22 @@
 {
   "Year 4": [
-"accept", "action", "actually", "admiration", "admission", "adoration", "affect", "antagonist", "anti-ageing", "antibiotic",
+
+"accept", "action", "actually", "admiration", "admission", "adoration", "affect", "antagonist", "antibiotic",
 "anticlimax", "anticlockwise", "antidote", "antifreeze", "antigravity", "antioxidant", "antiperspirant", "antiseptic", "antisocial",
 "antivirus", "antivenom", "applaud", "appear", "arrive", "ascension", "ascent", "assign", "astronaut", "attraction",
 "audio", "audition", "autobiography", "autocorrect", "autocratic", "autocue", "autofocus", "autograph", "autoimmune",
-"automation", "automobile", "automatic", "autonomy", "autonomous", "autopilot", "autumn", "babies’", "ball", "bawl", "beginner", "beginning", "believe", "berry", "boutique", "boys’", "brake", "break",
-"brochure", "build", "business",
-"calendar", "cancer", "catalogue", "cats’", "caught", "caution", "cause", "celebrate", "celebration", "cement",
+"automation", "automobile", "automatic", "autonomy", "autonomous", "autopilot", "autumn",
+
+"babies", "ball", "bawl", "beginner", "beginning", "believe", "berry", "boutique","brake", "break",
+"brochure", "build", "business", "calendar", "cancer", "catalogue", "caught", "caution", "cause", "celebrate", "celebration", "cement",
 "century", "centre", "ceremony", "certain", "certificate", "character", "charade", "chalet", "chandelier", "chauffeur",
-"chef", "chemist", "chemistry", "cheque", "children’s", "chorus", "circle", "circus", "citrus", "civic", "civilian",
+"chef", "chemist", "chemistry", "cheque", "children", "chorus", "circle", "circus", "citrus", "civic", "civilian",
 "civilisation", "clause", "clique", "colleague", "collision", "commission", "communication", "completion", "comprehension",
 "concentration", "conclusion", "conform", "confession", "confusion", "consider", "continue", "courage", "couple",
 "cousin", "creation", "crescent", "critique", "crystal", "crypto", "curious", "cynical", "cyst",
-
 "dangerous", "decide", "decision", "depression", "describe", "descent", "design", "devotion", "dialogue",
 "different", "difficult", "dimension", "disciple", "discipline", "disappear", "discussion", "distance", "distension",
-"dissolve", "division", "dogs’", "double", "daughter",
-
+"dissolve", "division", "dogs", "double", "daughter",
 "earth", "echo", "education", "effect", "Egypt", "eight", "elicit", "emotion", "enlighten", "enormous", "enough",
 "erosion", "except", "exercise", "expansion", "experience", "experiment", "expression", "extension", "extreme",
 
@@ -26,7 +26,7 @@
 "gardener", "gardening", "glamorous", "grammar", "grate", "great", "groan", "group", "grown", "guard", "guide",
 "gym",
 
-"heal", "he’ll", "hear", "heart", "heel", "height", "here", "hesitation", "hideous", "highlight", "homophone",
+"heal", "hear", "heart", "heel", "height", "here", "hesitation", "hideous", "highlight", "homophone",
 "humorous",
 
 "illegible", "illegal", "illiterate", "illogical", "illuminate", "illicit", "imagine", "immaterial", "immature",
@@ -44,14 +44,14 @@
 
 "launch", "learn", "league", "length", "library", "light", "lighter", "limitation", "limited", "limiting", "lyrics",
 
-"machine", "mail", "male", "material", "medicine", "men’s", "mention", "microphone", "migration", "minute",
-"mice’s", "mosque", "mountainous", "mourning", "multiple", "muscle", "mystery", "myriad", "myth",
+"machine", "mail", "male", "material", "medicine", "mention", "microphone", "migration", "minute",
+"mice", "mosque", "mountainous", "mourning", "multiple", "muscle", "mystery", "myriad", "myth",
 
 "naughty", "natural", "notice",
 
 "obsession", "obvious", "occasion", "often", "opened", "opening", "ordinary", "outrageous",
 
-"parents’", "particular", "passion", "people’s", "perhaps", "permission", "person’s", "phone", "phonics", "physics",
+"particular", "passion", "people", "perhaps", "permission", "phone", "phonics", "physics",
 "plague", "popular", "position", "possession", "possess", "possible", "position", "precipitation", "precise", "prefer",
 "preferred", "preparation", "pressure", "probably", "profession", "progression", "promise", "purpose", "pyramid",
 
@@ -62,19 +62,21 @@
 
 "saucer", "scene", "scenery", "scenic", "scheme", "school", "science", "scientific", "scissors", "scent", "sentence",
 "separate", "serious", "shock", "sign", "signal", "signature", "solution", "solve", "solvent", "special", "spontaneous",
-"spotlight", "station", "straight", "strength", "strange", "students’", "subconscious", "subdivide", "subheading",
+"spotlight", "station", "straight", "strength", "strange", "students", "subconscious", "subdivide", "subheading",
 "submarine", "submerge", "subscript", "substandard", "substance", "superficial", "superhero", "superman", "supermarket",
 "superpower", "superstar", "supervision", "suppose", "surprise", "suspension", "symbol", "syringe", "system",
 
-"teachers’", "technology", "telephone", "tension", "therefore", "though", "thought", "through", "tongue", "touch",
+"teachers", "technology", "telephone", "tension", "therefore", "though", "thought", "through", "tongue", "touch",
 "translation", "transgression", "transmission", "tremendous", "trouble",
 
 "unique", "unreal",
 
 "vacation", "vague", "various", "vigorous", "vocation",
 
-"weight", "women", "women’s"
-  ],
+"weight", "women"
+
+],
+
   "Year 5": [
     "accommodate", "accompany", "according", "achieve", "aggressive", "amateur", "appreciate", "attached", "available", "average",
     "awkward", "bargain", "bruise", "category", "cemetery", "committee", "communicate", "community", "competition", "conscience",
