@@ -19,7 +19,7 @@ body {
   padding: 40px;
   border-radius: 18px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
-  max-width: 760px;
+  max-width: 860px;
   width: 100%;
 }
 
@@ -118,12 +118,32 @@ button.secondary:hover {
   margin-top: 22px;
 }
 
-.summary-panel {
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.button-grid button {
+  width: 100%;
+  margin: 0;
+}
+
+.button-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.summary-panel,
+.info-strip,
+.detail-panel {
   background: #f6f8ff;
   border: 1px solid #dbe3ff;
   border-radius: 14px;
   padding: 16px;
   margin-top: 18px;
+  text-align: center;
+  color: #53607d;
 }
 
 .summary-title {
@@ -131,6 +151,42 @@ button.secondary:hover {
   color: #3d4eb0;
   text-align: center;
   margin-bottom: 6px;
+}
+
+.test-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.test-series-badge,
+.voice-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.test-series-badge {
+  background: #eef2ff;
+  color: #4457c6;
+}
+
+.voice-pill {
+  background: #f3f7ed;
+  color: #2f7a36;
+}
+
+.result-badge {
+  display: flex;
+  margin: 0 auto 14px;
+  width: fit-content;
 }
 
 .progress-badge {
@@ -159,9 +215,38 @@ button.secondary:hover {
 }
 
 .message-area {
-  min-height: 26px;
+  min-height: 28px;
   font-size: 15px;
   color: #d64545;
+  font-weight: 600;
+}
+
+.submission-indicator {
+  min-height: 48px;
+  margin: 8px auto 12px;
+  max-width: 420px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #e8f7ee;
+  color: #207245;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(32, 114, 69, 0.12);
+}
+
+.submission-indicator.show {
+  animation: pulseIn 0.25s ease-out;
+}
+
+@keyframes pulseIn {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .score-banner {
@@ -217,6 +302,104 @@ button.secondary:hover {
   color: #6d7480;
 }
 
+.detail-table-wrapper {
+  overflow-x: auto;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.detail-table th,
+.detail-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #e8ebf3;
+  text-align: left;
+  font-size: 14px;
+}
+
+.detail-table th {
+  background: #eef2ff;
+  color: #4457c6;
+}
+
+.detail-table tr:last-child td {
+  border-bottom: none;
+}
+
+.status-correct {
+  color: #207245;
+  font-weight: 700;
+}
+
+.status-missed {
+  color: #bb3a3a;
+  font-weight: 700;
+}
+
+.session-history-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.session-history-item {
+  background: white;
+  border: 1px solid #e6eaf3;
+  border-radius: 12px;
+  padding: 12px 14px;
+  text-align: left;
+  color: #495162;
+}
+
+.practice-group {
+  margin: 14px 0;
+  border: 1px solid #d9e2ff;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fbfcff;
+}
+
+.practice-group-summary {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  font-weight: 700;
+  color: #4457c6;
+  background: #eef2ff;
+  list-style: none;
+}
+
+.practice-group-summary::-webkit-details-marker {
+  display: none;
+}
+
+.practice-group-summary::after {
+  content: '▾';
+  margin-left: auto;
+  color: #4457c6;
+  transition: transform 0.2s ease;
+}
+
+.practice-group:not([open]) .practice-group-summary::after {
+  transform: rotate(-90deg);
+}
+
+.practice-group-letter {
+  font-size: 18px;
+}
+
+.practice-group-list {
+  margin: 0;
+  padding: 12px;
+}
+
 .word-list {
   list-style: none;
   margin: 20px 0;
@@ -264,7 +447,8 @@ button.secondary:hover {
     padding: 24px;
   }
 
-  .results-grid {
+  .results-grid,
+  .button-grid {
     grid-template-columns: 1fr;
   }
 
@@ -280,6 +464,16 @@ button.secondary:hover {
   button {
     width: calc(100% - 16px);
     margin: 8px;
+  }
+
+  .button-grid button {
+    width: 100%;
+    margin: 0;
+  }
+
+  .test-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   #wordDisplay {
