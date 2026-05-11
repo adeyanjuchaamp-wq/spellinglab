@@ -27,6 +27,11 @@
       <option value="all">All available words</option>
     </select>
 
+    <label for="voiceSelect">Playback Voice</label>
+    <select id="voiceSelect">
+      <option value="">Loading available voices...</option>
+    </select>
+
     <div class="summary-panel" id="homeSummary">
       <div class="summary-title">Ready to start</div>
       <p>Select a class and choose a test size to begin.</p>
@@ -43,47 +48,77 @@
   <div class="card screen hidden" id="practice">
     <h2 id="practiceTitle">Practice Mode</h2>
     <p id="practiceSubtitle">Review and listen to words.</p>
+    <div class="info-strip" id="practiceInfo">Practice is untracked and does not affect test counters.</div>
     <div id="wordList"></div>
     <div class="button-group">
-      <button class="secondary" onclick="goHome()">Back Home</button>
+      <button class="secondary" id="practiceBackButton" onclick="backFromPractice()">Back Home</button>
     </div>
   </div>
 
   <!-- Test Screen -->
   <div class="card screen hidden" id="test">
+    <div class="test-header">
+      <div class="test-series-badge" id="testSeriesBadge">Test 1</div>
+      <div class="voice-pill" id="activeVoiceLabel">Voice: Default</div>
+    </div>
     <h2>Test Mode</h2>
     <div class="progress-badge" id="testProgress">Word 1 of 10</div>
     <div id="wordDisplay">Tap speak to hear the word</div>
-    <button onclick="speakWord()" class="speak-button">Speak Word</button>
-    <input type="text" id="answer" placeholder="Type spelling here" autocomplete="off">
+    <button onclick="speakWord()" class="speak-button">🔊 Speak Word</button>
+    <input type="text" id="answer" placeholder="Type spelling here" autocomplete="off" inputmode="text" spellcheck="false">
+    <div id="submissionIndicator" class="submission-indicator hidden">✅ Answer submitted</div>
     <p id="testMessage" class="message-area"></p>
     <div class="button-group">
-      <button onclick="submitAnswer()">Submit Answer</button>
+      <button id="submitAnswerButton" onclick="submitAnswer()">Submit Answer</button>
       <button class="secondary" onclick="goHome()">End Test</button>
     </div>
   </div>
 
   <!-- Results Screen -->
   <div class="card screen hidden" id="results">
+    <div class="test-series-badge result-badge" id="resultsTestSeriesBadge">Test 1 Complete</div>
     <h2>Test Results</h2>
     <div class="score-banner" id="resultScore">0 / 0</div>
     <p id="resultSummary">Your test summary will appear here.</p>
 
     <div class="results-grid">
       <div class="result-column">
-        <h3>Correct Words</h3>
+        <h3>✅ Correct Words</h3>
         <div class="chip-list" id="correctWordsList"></div>
       </div>
       <div class="result-column">
-        <h3>Missed Words</h3>
+        <h3>❌ Missed Words</h3>
         <div class="chip-list" id="missedWordsList"></div>
       </div>
     </div>
 
-    <div class="button-group">
+    <div class="detail-panel">
+      <h3>Answer Breakdown</h3>
+      <div class="detail-table-wrapper">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>Word</th>
+              <th>Your Answer</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="detailedResultsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="detail-panel">
+      <h3>Session Summary</h3>
+      <div id="sessionHistoryList" class="session-history-list"></div>
+    </div>
+
+    <div class="button-grid">
       <button onclick="retrySameTest()">Retry Same Test</button>
       <button onclick="practiceMissedWords()">Practice Missed Words</button>
-      <button class="secondary" onclick="goHome()">Back Home</button>
+      <button onclick="practiceNewSetOfWords()">Practice New Set</button>
+      <button onclick="startNextTest()">Next Test</button>
+      <button class="secondary wide" onclick="goHome()">Back Home</button>
     </div>
   </div>
 
@@ -95,10 +130,8 @@
     <div id="adminLogin">
       <input type="text" id="adminUsername" placeholder="Admin username">
       <input type="password" id="adminPassword" placeholder="Password">
-        <div class="button-group">
-          <button onclick="loginAdmin()">Login</button>
-          <button class="secondary" onclick="goHome()">⬅ Back Home</button>
-        </div>
+      <button onclick="loginAdmin()">Login</button>
+      <button class="secondary" onclick="closeAdmin()">Back</button>
       <p id="adminLoginError" class="error-text"></p>
     </div>
 
@@ -115,7 +148,7 @@
       <div class="button-group">
         <button onclick="saveWords()" style="background: #4caf50;">Save Words</button>
         <button class="secondary" onclick="logoutAdmin()">Logout</button>
-        <button class="secondary" onclick="goHome()">Back</button>
+        <button class="secondary" onclick="closeAdmin()">Back</button>
       </div>
     </div>
   </div>
