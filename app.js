@@ -1,10 +1,12 @@
 const STORAGE_KEYS = {
   wordLists: 'spellingLabWordLists',
-  profiles: 'spellingLabProfiles'
+  profiles: 'spellingLabProfiles',
+  voiceName: 'spellingLabVoiceName'
 };
 
 const ADMIN_USER = 'admin';
 const ADMIN_PASS = 'password123';
+const SUBMISSION_DELAY_MS = 800;
 
 const appState = {
   wordLists: {},
@@ -13,6 +15,15 @@ const appState = {
   activeClass: '',
   adminLoggedIn: false,
   selectedAdminClass: '',
+  availableVoices: [],
+  selectedVoiceName: localStorage.getItem(STORAGE_KEYS.voiceName) || '',
+  currentTestNumber: 1,
+  currentTestKey: '',
+  isSubmitting: false,
+  adminPreviousScreen: 'home',
+  practiceReturnScreen: 'home',
+  practiceReturnLabel: '⬅ Back Home',
+  sessionHistory: [],
   currentSession: createEmptySession()
 };
 
@@ -27,7 +38,12 @@ function createEmptySession() {
     incorrect: [],
     total: 0,
     completed: false,
-    sourceLabel: ''
+    sourceLabel: '',
+    mode: 'test',
+    testNumber: 1,
+    className: '',
+    studentName: '',
+    requestedCount: 10
   };
 }
 
@@ -36,6 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   populateClassSelects();
   bindHomeEvents();
   attachTestInputHandler();
+  initialiseVoices();
   updateHomeSummary();
 
   if (document.getElementById('adminLogin')) {
@@ -47,22 +64,47 @@ function bindHomeEvents() {
   ['studentName', 'classSelect', 'testSizeSelect'].forEach(id => {
     const element = document.getElementById(id);
     if (element) {
-      element.addEventListener('input', updateHomeSummary);
-      element.addEventListener('change', updateHomeSummary);
+      element.addEventListener('input', () => {
+        resetTestSeriesIfNeeded();
+        updateHomeSummary();
+      });
+      element.addEventListener('change', () => {
+        resetTestSeriesIfNeeded();
+        updateHomeSummary();
+      });
     }
   });
+
+  const voiceSelect = document.getElementById('voiceSelect');
+  if (voiceSelect) {
+    voiceSelect.addEventListener('change', event => {
+      appState.selectedVoiceName = event.target.value;
+      localStorage.setItem(STORAGE_KEYS.voiceName, appState.selectedVoiceName);
+      updateActiveVoiceLabel();
+    });
+  }
 }
 
 function attachTestInputHandler() {
   const answerInput = document.getElementById('answer');
   if (!answerInput) return;
 
+  answerInput.addEventListener('input', handleAnswerInputValidation);
   answerInput.addEventListener('keydown', event => {
     if (event.key === 'Enter') {
       event.preventDefault();
       submitAnswer();
     }
   });
+}
+
+function handleAnswerInputValidation(event) {
+  const originalValue = event.target.value;
+  const sanitisedValue = originalValue.replace(/[^a-zA-Z]/g, '');
+  if (originalValue !== sanitisedValue) {
+    event.target.value = sanitisedValue;
+    showTestMessage('Only letters A–Z are allowed. Numbers and symbols have been removed.');
+  }
 }
 
 function loadWords() {
@@ -89,11 +131,54 @@ function saveWordListsToStorage() {
   localStorage.setItem(STORAGE_KEYS.wordLists, JSON.stringify(appState.wordLists));
 }
 
+function initialiseVoices() {
+  populateVoiceSelect();
+  if (typeof speechSynthesis !== 'undefined') {
+    speechSynthesis.onvoiceschanged = () => populateVoiceSelect();
+  }
+}
+
+function populateVoiceSelect() {
+  const voiceSelect = document.getElementById('voiceSelect');
+  if (!voiceSelect || typeof speechSynthesis === 'undefined') return;
+
+  const voices = speechSynthesis.getVoices().filter(voice => voice.lang?.toLowerCase().startsWith('en'));
+  appState.availableVoices = voices.length ? voices : speechSynthesis.getVoices();
+
+  voiceSelect.innerHTML = '';
+
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Browser Default Voice';
+  voiceSelect.appendChild(defaultOption);
+
+  appState.availableVoices.forEach(voice => {
+    const option = document.createElement('option');
+    option.value = voice.name;
+    option.textContent = `${voice.name} (${voice.lang})`;
+    voiceSelect.appendChild(option);
+  });
+
+  const hasSavedVoice = appState.availableVoices.some(voice => voice.name === appState.selectedVoiceName);
+  if (!hasSavedVoice) {
+    appState.selectedVoiceName = '';
+    localStorage.removeItem(STORAGE_KEYS.voiceName);
+  }
+
+  voiceSelect.value = appState.selectedVoiceName;
+  updateActiveVoiceLabel();
+}
+
+function updateActiveVoiceLabel() {
+  const activeVoiceLabel = document.getElementById('activeVoiceLabel');
+  if (!activeVoiceLabel) return;
+  activeVoiceLabel.textContent = `Voice: ${appState.selectedVoiceName || 'Default'}`;
+}
+
 function populateClassSelects() {
   const classes = Object.keys(appState.wordLists).sort();
   populateSelect('classSelect', classes);
   populateSelect('classSelectAdmin', classes);
-  populateSelect('manageClassSelect', classes);
 }
 
 function populateSelect(selectId, classes) {
@@ -197,17 +282,43 @@ function shuffleArray(items) {
   return array;
 }
 
-function buildAdaptiveWordPool(allWords, requestedCount, studentName, className) {
+function getCurrentTestKey(studentName = getSelectedStudent(), className = getSelectedClass()) {
+  return `${normaliseStudentKey(studentName)}::${className}`;
+}
+
+function ensureTestSeries(studentName, className, preserveSeries = false) {
+  const nextKey = getCurrentTestKey(studentName, className);
+  if (!preserveSeries || appState.currentTestKey !== nextKey) {
+    appState.currentTestKey = nextKey;
+    appState.currentTestNumber = 1;
+    appState.sessionHistory = [];
+  }
+}
+
+function resetTestSeriesIfNeeded() {
+  const key = getCurrentTestKey();
+  if (appState.currentTestKey && appState.currentTestKey !== key) {
+    appState.currentTestNumber = 1;
+    appState.currentTestKey = '';
+    appState.sessionHistory = [];
+  }
+}
+
+function buildAdaptiveWordPool(allWords, requestedCount, studentName, className, options = {}) {
   const uniqueWords = dedupeWords(allWords);
-  if (uniqueWords.length === 0) return [];
+  const exclude = new Set(dedupeWords(options.excludeWords || []));
+  const filteredWords = uniqueWords.filter(word => !exclude.has(word));
+  const workingWords = filteredWords.length ? filteredWords : uniqueWords;
+
+  if (workingWords.length === 0) return [];
 
   if (requestedCount === 'all') {
-    return shuffleArray(uniqueWords);
+    return shuffleArray(workingWords);
   }
 
   const { classProfile } = getStudentClassProfile(studentName, className);
 
-  const rankedWords = uniqueWords
+  const rankedWords = workingWords
     .map(word => {
       const stats = classProfile.wordStats[word] || { correct: 0, incorrect: 0, lastSeen: 0 };
       const unseen = stats.correct === 0 && stats.incorrect === 0;
@@ -228,16 +339,37 @@ function buildAdaptiveWordPool(allWords, requestedCount, studentName, className)
   return rankedWords.slice(0, Math.min(requestedCount, rankedWords.length));
 }
 
-function startPractice(customWords = null, options = {}) {
-  const className = getSelectedClass();
-  const words = customWords ? dedupeWords(customWords) : getClassWords(className);
-  const title = options.title || `${className || 'Class'} Practice`;
-  const subtitle = options.subtitle || 'Review the words and listen as many times as needed.';
+function setPracticeBackTarget(screenId = 'home', label = '⬅ Back Home') {
+  appState.practiceReturnScreen = screenId;
+  appState.practiceReturnLabel = label;
+  const button = document.getElementById('practiceBackButton');
+  if (button) {
+    button.textContent = label;
+  }
+}
 
+function startPractice(customWords = null, options = {}) {
+  const className = options.className || getSelectedClass();
+  const studentName = options.studentName || getSelectedStudent();
+  const requestedCount = options.requestedCount || getRequestedTestSize();
+  const generatedWords = customWords ? dedupeWords(customWords) : getClassWords(className);
+  const words = options.onlyFresh
+    ? buildAdaptiveWordPool(getClassWords(className), requestedCount, studentName, className, { excludeWords: options.excludeWords || [] })
+    : generatedWords;
+  const sortedWords = [...words].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  
+  const title = options.title || `${className || 'Class'} Practice`;
+  const subtitle = options.subtitle || 'Review and listen to words as many times as needed.';
+  const practiceInfo = document.getElementById('practiceInfo');
   const practiceTitle = document.getElementById('practiceTitle');
   const practiceSubtitle = document.getElementById('practiceSubtitle');
   const wordList = document.getElementById('wordList');
 
+  setPracticeBackTarget(options.returnScreen || 'home', options.returnLabel || '⬅ Back Home');
+
+  if (practiceInfo) {
+    practiceInfo.textContent = options.infoText || 'Practice is untracked and does not affect test counters.';
+  }
   if (practiceTitle) practiceTitle.textContent = title;
   if (practiceSubtitle) practiceSubtitle.textContent = subtitle;
 
@@ -245,23 +377,61 @@ function startPractice(customWords = null, options = {}) {
     if (!words.length) {
       wordList.innerHTML = '<div class="chip empty">No words available for this practice set.</div>';
     } else {
-      const items = words.map(word => `
-        <li class="word-item">
-          <span>${word}</span>
-          <button onclick='speak(${JSON.stringify(word)})'>🔊 Speak</button>
-        </li>
-      `).join('');
-
-      wordList.innerHTML = `<ul class="word-list">${items}</ul>`;
-    }
+      wordList.innerHTML = renderPracticeGroups(sortedWords);
+     }
   }
 
   showScreen('practice');
 }
 
+function renderPracticeGroups(words) {
+  const groupedWords = words.reduce((groups, word) => {
+    const initial = /^[a-z]/i.test(word)
+      ? word.charAt(0).toUpperCase()
+      : '#';
+
+    if (!groups[initial]) {
+      groups[initial] = [];
+    }
+
+    groups[initial].push(word);
+    return groups;
+  }, {});
+
+  return Object.keys(groupedWords)
+    .sort((a, b) => a.localeCompare(b))
+    .map((letter, index) => {
+      const items = groupedWords[letter]
+        .map(
+          (word) => `
+            <li class="word-item">
+              <span>${word}</span>
+              <button onclick='speak(${JSON.stringify(word)})'>
+                🔊 Speak
+              </button>
+            </li>
+          `
+        )
+        .join('');
+
+      return `
+        <details class="practice-group" ${index === 0 ? 'open' : ''}>
+          <summary class="practice-group-summary">
+            <span class="practice-group-letter">${letter}</span>
+          </summary>
+
+          <ul class="word-list practice-group-list">
+            ${items}
+          </ul>
+        </details>
+      `;
+    })
+    .join('');
+}
+
 function startTest(customWords = null, options = {}) {
-  const className = getSelectedClass();
-  const studentName = getSelectedStudent();
+  const className = options.className || getSelectedClass();
+  const studentName = options.studentName || getSelectedStudent();
   const allWords = getClassWords(className);
 
   if (!className || allWords.length === 0) {
@@ -269,10 +439,17 @@ function startTest(customWords = null, options = {}) {
     return;
   }
 
-  const requestedCount = customWords ? customWords.length : getRequestedTestSize();
+  ensureTestSeries(studentName, className, options.preserveSeries === true);
+  if (options.incrementTestNumber === true) {
+    appState.currentTestNumber += 1;
+  }
+
+  const requestedCount = customWords ? customWords.length : (options.requestedCount || getRequestedTestSize());
   const testWords = customWords
     ? dedupeWords(customWords)
-    : buildAdaptiveWordPool(allWords, requestedCount, studentName, className);
+    : buildAdaptiveWordPool(allWords, requestedCount, studentName, className, {
+        excludeWords: options.excludeWords || []
+      });
 
   if (!testWords.length) {
     alert('No test words are available for this selection.');
@@ -281,6 +458,7 @@ function startTest(customWords = null, options = {}) {
 
   appState.activeStudent = studentName;
   appState.activeClass = className;
+  appState.isSubmitting = false;
   appState.currentSession = {
     words: [...testWords],
     originalWords: [...testWords],
@@ -291,10 +469,17 @@ function startTest(customWords = null, options = {}) {
     incorrect: [],
     total: testWords.length,
     completed: false,
-    sourceLabel: options.sourceLabel || 'Adaptive Test'
+    sourceLabel: options.sourceLabel || `Test ${appState.currentTestNumber}`,
+    mode: 'test',
+    testNumber: appState.currentTestNumber,
+    className,
+    studentName,
+    requestedCount
   };
 
   clearTestMessage();
+  hideSubmissionIndicator();
+  updateActiveVoiceLabel();
   showScreen('test');
   renderCurrentTestWord();
 }
@@ -312,7 +497,12 @@ function renderCurrentTestWord() {
   const progress = document.getElementById('testProgress');
   const wordDisplay = document.getElementById('wordDisplay');
   const answer = document.getElementById('answer');
+  const testSeriesBadge = document.getElementById('testSeriesBadge');
+  const submitButton = document.getElementById('submitAnswerButton');
 
+  if (testSeriesBadge) {
+    testSeriesBadge.textContent = `Test ${currentSession.testNumber}`;
+  }
   if (progress) {
     progress.textContent = `Word ${currentSession.currentIndex + 1} of ${currentSession.total}`;
   }
@@ -323,8 +513,12 @@ function renderCurrentTestWord() {
     answer.value = '';
     answer.focus();
   }
+  if (submitButton) {
+    submitButton.disabled = false;
+  }
 
   clearTestMessage();
+  hideSubmissionIndicator();
 }
 
 function clearTestMessage() {
@@ -341,9 +535,34 @@ function showTestMessage(message) {
   }
 }
 
+function showSubmissionIndicator(message = '✅ Answer submitted') {
+  const indicator = document.getElementById('submissionIndicator');
+  if (!indicator) return;
+  indicator.textContent = message;
+  indicator.classList.remove('hidden');
+  indicator.classList.add('show');
+}
+
+function hideSubmissionIndicator() {
+  const indicator = document.getElementById('submissionIndicator');
+  if (!indicator) return;
+  indicator.classList.add('hidden');
+  indicator.classList.remove('show');
+}
+
+function getSelectedVoice() {
+  if (!appState.selectedVoiceName) return null;
+  return appState.availableVoices.find(voice => voice.name === appState.selectedVoiceName) || null;
+}
+
 function speak(word) {
   const utterance = new SpeechSynthesisUtterance(word);
+  const selectedVoice = getSelectedVoice();
   utterance.rate = 0.8;
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+    utterance.lang = selectedVoice.lang;
+  }
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
 }
@@ -354,18 +573,34 @@ function speakWord() {
   }
 }
 
-function submitAnswer() {
-  const answerInput = document.getElementById('answer');
-  const userAnswer = answerInput ? answerInput.value.trim().toLowerCase() : '';
-  const currentWord = appState.currentSession.currentWord;
-
-  if (!currentWord) return;
-
+function validateAnswer(userAnswer, currentWord) {
   if (!userAnswer) {
-    showTestMessage('Please type an answer before moving on.');
+    return 'Please type an answer before moving on.';
+  }
+  if (!/^[a-zA-Z]+$/.test(userAnswer)) {
+    return 'Answers must contain letters only.';
+  }
+  if (userAnswer.length === 1 && currentWord.length > 1) {
+    return 'Single-letter answers are not allowed for this word.';
+  }
+  return '';
+}
+
+function submitAnswer() {
+  if (appState.isSubmitting) return;
+
+  const answerInput = document.getElementById('answer');
+  const submitButton = document.getElementById('submitAnswerButton');
+  const rawAnswer = answerInput ? answerInput.value.trim() : '';
+  const validationMessage = validateAnswer(rawAnswer, appState.currentSession.currentWord || '');
+
+  if (validationMessage) {
+    showTestMessage(validationMessage);
     return;
   }
 
+  const userAnswer = rawAnswer.toLowerCase();
+  const currentWord = appState.currentSession.currentWord;
   const isCorrect = userAnswer === currentWord.toLowerCase();
   const answerRecord = {
     word: currentWord,
@@ -383,14 +618,24 @@ function submitAnswer() {
 
   updateWordHistory(appState.activeStudent, appState.activeClass, currentWord, isCorrect);
 
-  appState.currentSession.currentIndex += 1;
-
-  if (appState.currentSession.currentIndex >= appState.currentSession.total) {
-    completeTest();
-    return;
+  appState.isSubmitting = true;
+  if (submitButton) {
+    submitButton.disabled = true;
   }
+  showSubmissionIndicator(isCorrect ? '✅ Submitted' : '✅ Submitted — moving to next word');
+  clearTestMessage();
 
-  renderCurrentTestWord();
+  window.setTimeout(() => {
+    appState.currentSession.currentIndex += 1;
+    appState.isSubmitting = false;
+
+    if (appState.currentSession.currentIndex >= appState.currentSession.total) {
+      completeTest();
+      return;
+    }
+
+    renderCurrentTestWord();
+  }, SUBMISSION_DELAY_MS);
 }
 
 function updateWordHistory(studentName, className, word, isCorrect) {
@@ -419,7 +664,9 @@ function completeTest() {
   if (session.completed) return;
 
   session.completed = true;
+  hideSubmissionIndicator();
   saveRecentTest();
+  addSessionHistoryEntry(session);
   renderResults();
   updateHomeSummary();
   showScreen('results');
@@ -432,13 +679,27 @@ function saveRecentTest() {
   classProfile.recentTests.unshift({
     date: Date.now(),
     total: session.total,
+    testNumber: session.testNumber,
+    score: session.correct.length,
     correct: [...session.correct],
     incorrect: [...session.incorrect],
-    words: [...session.originalWords]
+    words: [...session.originalWords],
+    answers: session.answers.map(answer => ({ ...answer }))
   });
 
   classProfile.recentTests = classProfile.recentTests.slice(0, 10);
   saveProfiles(profiles);
+}
+
+function addSessionHistoryEntry(session) {
+  appState.sessionHistory = appState.sessionHistory.filter(entry => entry.testNumber !== session.testNumber);
+  appState.sessionHistory.push({
+    testNumber: session.testNumber,
+    score: session.correct.length,
+    total: session.total,
+    missedCount: session.incorrect.length
+  });
+  appState.sessionHistory.sort((a, b) => a.testNumber - b.testNumber);
 }
 
 function renderResults() {
@@ -449,16 +710,22 @@ function renderResults() {
 
   const resultScore = document.getElementById('resultScore');
   const resultSummary = document.getElementById('resultSummary');
+  const resultsBadge = document.getElementById('resultsTestSeriesBadge');
 
+  if (resultsBadge) {
+    resultsBadge.textContent = `Test ${session.testNumber} Complete`;
+  }
   if (resultScore) {
     resultScore.textContent = `${correctCount} / ${total}`;
   }
   if (resultSummary) {
-    resultSummary.textContent = `${appState.activeStudent} scored ${correctCount} out of ${total} (${percent}%).`;
+    resultSummary.textContent = `${session.studentName} completed Test ${session.testNumber} with ${correctCount} out of ${total} correct (${percent}%).`;
   }
 
   renderChipList('correctWordsList', session.correct, 'correct', 'No correct words yet');
   renderChipList('missedWordsList', session.incorrect, 'missed', 'No missed words — great job!');
+  renderDetailedResults();
+  renderSessionHistory();
 }
 
 function renderChipList(containerId, words, variant, emptyText) {
@@ -473,13 +740,54 @@ function renderChipList(containerId, words, variant, emptyText) {
   container.innerHTML = words.map(word => `<span class="chip ${variant}">${word}</span>`).join('');
 }
 
+function renderDetailedResults() {
+  const body = document.getElementById('detailedResultsBody');
+  if (!body) return;
+
+  if (!appState.currentSession.answers.length) {
+    body.innerHTML = '<tr><td colspan="3">No answers recorded yet.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = appState.currentSession.answers.map(answer => `
+    <tr>
+      <td>${answer.word}</td>
+      <td>${answer.userAnswer}</td>
+      <td class="${answer.isCorrect ? 'status-correct' : 'status-missed'}">${answer.isCorrect ? 'Correct' : `Missed · Correct: ${answer.word}`}</td>
+    </tr>
+  `).join('');
+}
+
+function renderSessionHistory() {
+  const list = document.getElementById('sessionHistoryList');
+  if (!list) return;
+
+  if (!appState.sessionHistory.length) {
+    list.innerHTML = '<div class="session-history-item">No completed tests in this session yet.</div>';
+    return;
+  }
+
+  list.innerHTML = appState.sessionHistory.map(entry => `
+    <div class="session-history-item">
+      <strong>Test ${entry.testNumber}</strong> · Score ${entry.score}/${entry.total} · Missed ${entry.missedCount}
+    </div>
+  `).join('');
+}
+
 function retrySameTest() {
   if (!appState.currentSession.originalWords.length) {
     goHome();
     return;
   }
 
-  startTest(appState.currentSession.originalWords, { sourceLabel: 'Retry Test' });
+  appState.currentTestNumber = appState.currentSession.testNumber;
+  startTest(appState.currentSession.originalWords, {
+    preserveSeries: true,
+    sourceLabel: `Test ${appState.currentSession.testNumber}`,
+    className: appState.currentSession.className,
+    studentName: appState.currentSession.studentName,
+    requestedCount: appState.currentSession.requestedCount
+  });
 }
 
 function practiceMissedWords() {
@@ -490,8 +798,48 @@ function practiceMissedWords() {
 
   startPractice(appState.currentSession.incorrect, {
     title: 'Practice Missed Words',
-    subtitle: 'Focus on the words missed in the last test.'
+    subtitle: 'Review the words missed in the last test, then return to the same results page.',
+    className: appState.currentSession.className,
+    studentName: appState.currentSession.studentName,
+    returnScreen: 'results',
+    returnLabel: '⬅ Back to Results'
   });
+}
+
+function practiceNewSetOfWords() {
+  const session = appState.currentSession;
+  startPractice(null, {
+    title: 'Practice New Set of Words',
+    subtitle: 'Here is a fresh untracked practice batch before the next test.',
+    onlyFresh: true,
+    excludeWords: session.originalWords,
+    requestedCount: session.requestedCount,
+    className: session.className,
+    studentName: session.studentName,
+    returnScreen: 'results',
+    returnLabel: '⬅ Back to Results'
+  });
+}
+
+function startNextTest() {
+  const session = appState.currentSession;
+  startTest(null, {
+    preserveSeries: true,
+    incrementTestNumber: true,
+    className: session.className,
+    studentName: session.studentName,
+    requestedCount: session.requestedCount,
+    excludeWords: session.originalWords
+  });
+}
+
+function backFromPractice() {
+  if (appState.practiceReturnScreen === 'results') {
+    renderResults();
+    showScreen('results');
+    return;
+  }
+  goHome();
 }
 
 function updateHomeSummary() {
@@ -518,15 +866,39 @@ function updateHomeSummary() {
   `;
 }
 
+function resetSessionFlow() {
+  appState.currentTestNumber = 1;
+  appState.currentTestKey = '';
+  appState.sessionHistory = [];
+  appState.currentSession = createEmptySession();
+  setPracticeBackTarget('home', '⬅ Back Home');
+}
+
 function goHome() {
   clearTestMessage();
+  hideSubmissionIndicator();
+  resetSessionFlow();
   showScreen('home');
+  updateActiveVoiceLabel();
   updateHomeSummary();
 }
 
 function openAdmin() {
+  appState.adminPreviousScreen = appState.currentMode === 'admin' ? 'home' : appState.currentMode;
   resetAdminLogin();
   showScreen('admin');
+}
+
+function closeAdmin() {
+  const target = appState.adminPreviousScreen || 'home';
+  showScreen(target);
+  if (target === 'results') {
+    renderResults();
+  } else if (target === 'practice') {
+    // leave current practice screen content as-is
+  } else {
+    updateHomeSummary();
+  }
 }
 
 function resetAdminLogin() {
@@ -566,7 +938,6 @@ function loginAdmin() {
 function setupAdminClasses() {
   const classes = Object.keys(appState.wordLists).sort();
   populateSelect('classSelectAdmin', classes);
-  populateSelect('manageClassSelect', classes);
 
   const select = document.getElementById('classSelectAdmin');
   appState.selectedAdminClass = select?.value || classes[0] || '';
@@ -610,55 +981,9 @@ function addAdminClass() {
   alert(`New class ${className} added.`);
 }
 
-function renameClass() {
-  const manageSelect = document.getElementById('manageClassSelect');
-  const renameInput = document.getElementById('renameClassName');
-  if (!manageSelect || !renameInput) return;
-
-  const oldName = manageSelect.value;
-  const newName = renameInput.value.trim();
-
-  if (!newName) {
-    alert('Enter a valid new class name.');
-    return;
-  }
-
-  if (appState.wordLists[newName]) {
-    alert('Class name already exists.');
-    return;
-  }
-
-  appState.wordLists[newName] = appState.wordLists[oldName];
-  delete appState.wordLists[oldName];
-  appState.selectedAdminClass = newName;
-  renameInput.value = '';
-
-  saveWordListsToStorage();
-  populateClassSelects();
-  setupAdminClasses();
-  updateHomeSummary();
-  alert(`Class renamed to ${newName}.`);
-}
-
-function deleteClass() {
-  const manageSelect = document.getElementById('manageClassSelect');
-  if (!manageSelect) return;
-
-  const className = manageSelect.value;
-  if (!confirm(`Are you sure you want to delete the class "${className}" and all its words?`)) {
-    return;
-  }
-
-  delete appState.wordLists[className];
-  saveWordListsToStorage();
-  populateClassSelects();
-  setupAdminClasses();
-  updateHomeSummary();
-  alert(`Class "${className}" deleted.`);
-}
-
 function logoutAdmin() {
   resetAdminLogin();
+  showScreen('admin');
 }
 
 function saveWords() {
